@@ -1,0 +1,95 @@
+FROM docker-baseimage-rdesktop-web:latest
+
+LABEL org.opencontainers.image.authors="github@sytone.com"
+LABEL org.opencontainers.image.source="https://github.com/sytone/obsidian-remote"
+LABEL org.opencontainers.image.title="Container hosted Obsidian MD"
+LABEL org.opencontainers.image.description="Hosted Obsidian instance allowing access via web browser"
+
+RUN \
+   echo "**** install packages ****" && \
+        # Update and install extra packages.
+        apt-get update && \
+        apt-get install -y --no-install-recommends \
+            # Packages needed to download and extract obsidian.
+            curl \
+            libnss3 \
+            # Install Chrome dependencies.
+            dbus-x11 \
+            uuid-runtime
+
+RUN \
+      apt-get install -y --no-install-recommends software-properties-common && \
+      add-apt-repository ppa:deadsnakes/ppa && \
+      apt-get update && \
+      # Install py39 from deadsnakes repository
+      apt-get -y --no-install-recommends install python3.9 \
+      # Install pip from standard ubuntu packages
+      python3-pip
+
+RUN \
+      apt-get install -y --no-install-recommends git
+
+RUN \
+   echo "**** Sphinx & Extensions ****" && \
+      pip3 install --no-cache-dir --upgrade 'pip == 23.0.1' && \
+      pip3 install --no-cache-dir pipenv && \
+      pip3 install --no-cache-dir \
+        'Sphinx                        == 5.3.0' \
+        'sphinx-autobuild              == 2021.3.14' \
+        'sphinx_design                 == 0.3.0' \
+        'myst-parser' \
+        'sphinx_design' \
+        'linkify-it-py' && \
+\
+      pip3 install --no-cache-dir git+https://github.com/MacqGit/sphinx-book-theme.git@language_switcher#egg=sphinx-book-theme && \
+      pip3 install --no-cache-dir git+https://github.com/MacqGit/sphinx-external-toc.git@main#egg=sphinx-external-toc && \
+      pip3 install --no-cache-dir git+https://github.com/MacqGit/sphinx-multilingual.git@main#egg=sphinx-multilingual && \
+      pip3 install --no-cache-dir git+https://github.com/MacqGit/sphinx-gettext-ifconfig.git@main#egg=sphinx-gettext-ifconfig && \
+\
+      pip3 list --outdated && \
+\
+   echo "**** Latex PDF ****" && \
+\
+      apt-get install -y --no-install-recommends \
+      latexmk texlive-fonts-recommended texlive-lang-french texlive-latex-extra texlive-latex-recommended tex-gyre && \ 
+\
+   echo "**** cleanup ****" && \
+      apt-get autoremove -y && \
+      apt-get autoclean && \
+      rm -rf \
+      /var/cache/* \
+      /var/lib/apt/lists/* \
+      /var/tmp/* \
+      /tmp/*
+
+# set version label
+ARG OBSIDIAN_VERSION=0.15.9
+
+RUN \
+    echo "**** download obsidian ****" && \
+        curl \
+        https://github.com/obsidianmd/obsidian-releases/releases/download/v$OBSIDIAN_VERSION/Obsidian-$OBSIDIAN_VERSION.AppImage \
+        -L \
+        -o obsidian.AppImage
+
+RUN \
+    echo "**** extract obsidian ****" && \
+        chmod +x /obsidian.AppImage && \
+        /obsidian.AppImage --appimage-extract
+
+ENV \
+    CUSTOM_PORT="8080" \
+    GUIAUTOSTART="true" \
+    HOME="/vaults" \
+    TITLE="Obsidian v$OBSIDIAN_VERSION"
+
+# add local files
+COPY root/ /
+
+EXPOSE 8080
+EXPOSE 27123
+EXPOSE 27124
+VOLUME ["/config","/vaults"]
+
+
+

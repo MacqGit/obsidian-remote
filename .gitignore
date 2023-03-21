@@ -1,0 +1,7 @@
+/_build
+/.project
+/.pydevproject
+/.settings/
+.obsidian/workspace
+*.yml
+/.vscode
