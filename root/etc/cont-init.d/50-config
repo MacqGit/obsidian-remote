@@ -36,20 +36,19 @@ echo "********************************"
 echo "****  End Date Information  ****"
 echo "********************************"
 
-# permissions
-chown -R abc:abc \
-    /config \
-    /vaults \
-    /squashfs-root
-
 # Create .bashrc file for including TeX/texlive/bin/x86_64-linux/ in PATH for xterm non-login bash session
 if [ ! -f /config/.bashrc ]; then
    touch /config/.bashrc
    cat <<'EOF' > /config/.bashrc
 echo "run .bashrc"
 PATH="/TeX/texlive/bin/x86_64-linux/:${PATH}"
+cd /vaults
 EOF
 fi
 
-# Switch to /vaults
-cd /vaults
+# permissions
+chown -R abc:abc \
+    /config \
+    /vaults \
+    /squashfs-root
+
