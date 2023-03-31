@@ -31,6 +31,8 @@ url
 rerunfilecheck
 amscls
 oberdiek
-
+pgf
+anyfontsize
+sectsty
 
 
