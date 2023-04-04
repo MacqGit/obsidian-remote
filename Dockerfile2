@@ -41,6 +41,7 @@ RUN \
         'Sphinx                        == 5.3.0' \
         'sphinx-autobuild              == 2021.3.14' \
         'sphinx_design                 == 0.3.0' \
+        'sphinx-intl' \
         'myst-parser' \
         'sphinx_design' \
         'linkify-it-py' && \
