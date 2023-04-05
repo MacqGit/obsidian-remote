@@ -36,6 +36,28 @@ echo "********************************"
 echo "****  End Date Information  ****"
 echo "********************************"
 
+# Create .Xresources file if doesn't exist
+if [ ! -f /config/.Xresources ]; then
+   touch /config/.Xresources
+   cat <<'EOF' > /config/.Xresources
+XTerm*selectToClipboard: true
+
+XTerm*renderFont: true
+XTerm*faceName: MiscFixed
+XTerm*faceSize: 10
+
+XTerm*geometry: 100x30+10+10
+
+XTerm*savelines: 20000
+XTerm*rightScrollBar: true
+XTerm*ScrollBar: true
+XTerm*foreground: rgb:cf/cf/cf
+XTerm*background: rgb:00/00/00
+EOF
+echo "create .Xresources"
+xrdb -merge ~/.Xresources
+fi
+
 # Create .bashrc file for including TeX/texlive/bin/x86_64-linux/ in PATH for xterm non-login bash session
 if [ ! -f /config/.bashrc ]; then
    touch /config/.bashrc
