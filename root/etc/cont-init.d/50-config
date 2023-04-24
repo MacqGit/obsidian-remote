@@ -59,11 +59,13 @@ xrdb -merge ~/.Xresources
 fi
 
 # Create .bashrc file for including TeX/texlive/bin/x86_64-linux/ in PATH for xterm non-login bash session
+# Switch HOME
 if [ ! -f /config/.bashrc ]; then
    touch /config/.bashrc
    cat <<'EOF' > /config/.bashrc
 echo "run .bashrc"
 PATH="/TeX/texlive/bin/x86_64-linux/:${PATH}"
+HOME=/config
 cd /vaults
 EOF
 fi

@@ -1,5 +1,7 @@
 FROM docker-baseimage-rdesktop-web:latest
 
+SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
+
 LABEL org.opencontainers.image.authors="github@sytone.com"
 LABEL org.opencontainers.image.source="https://github.com/sytone/obsidian-remote"
 LABEL org.opencontainers.image.title="Container hosted Obsidian MD"
@@ -19,7 +21,10 @@ RUN \
             # Tex dependancies
             fontconfig wget make \
             # Basic editor
-            featherpad
+            featherpad && \
+            # Open file extensions
+         apt-get install -y \
+            xdg-utils
 
 RUN \
       apt-get install -y --no-install-recommends software-properties-common && \
@@ -112,7 +117,7 @@ RUN \
       /tmp/*
 
 # set version label
-ARG OBSIDIAN_VERSION=0.15.9
+ARG OBSIDIAN_VERSION=0.15.9 - 2.0
 
 RUN \
     echo "**** download obsidian ****" && \
@@ -130,7 +135,7 @@ ENV \
     CUSTOM_PORT="8080" \
     GUIAUTOSTART="true" \
     HOME="/vaults" \
-    TITLE="Obsidian v$OBSIDIAN_VERSION"
+    TITLE="Sphinx-Obsidian v$OBSIDIAN_VERSION"
 
 # add local files
 COPY root/ /
@@ -138,6 +143,7 @@ COPY root/ /
 WORKDIR $HOME
 
 EXPOSE 8080
+EXPOSE 8000
 EXPOSE 27123
 EXPOSE 27124
 VOLUME ["/config","/vaults"]

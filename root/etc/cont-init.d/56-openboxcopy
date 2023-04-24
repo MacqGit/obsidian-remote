@@ -4,4 +4,15 @@
 [[ ! -f /config/.config/openbox/menu.xml ]] && \
     mkdir -p /config/.config/openbox && \
     cp /defaults/menu.xml /config/.config/openbox/menu.xml && \
+    
+if [ ! -f /config/.config/mimeapps.list ]; then
+   touch /config/.config/mimeapps.list
+   cat <<'EOF' > /config/.config/mimeapps.list
+[Default Applications]
+text/x-rst=featherpad.desktop
+text/x-python=featherpad.desktop
+application/x-shellscript=featherpad.desktop
+EOF
+fi
+
     chown -R abc:abc /config/.config
