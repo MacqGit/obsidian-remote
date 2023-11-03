@@ -2,10 +2,10 @@ FROM docker-baseimage-rdesktop-web:latest
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
-LABEL org.opencontainers.image.authors="github@sytone.com"
-LABEL org.opencontainers.image.source="https://github.com/sytone/obsidian-remote"
-LABEL org.opencontainers.image.title="Container hosted Obsidian MD"
-LABEL org.opencontainers.image.description="Hosted Obsidian instance allowing access via web browser"
+# LABEL org.opencontainers.image.authors="github@sytone.com"
+# LABEL org.opencontainers.image.source="https://github.com/sytone/obsidian-remote"
+# LABEL org.opencontainers.image.title="Container hosted Obsidian MD"
+# LABEL org.opencontainers.image.description="Hosted Obsidian instance allowing access via web browser"
 
 RUN \
    echo "**** install packages ****" && \
