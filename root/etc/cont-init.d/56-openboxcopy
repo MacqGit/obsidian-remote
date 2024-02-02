@@ -12,6 +12,8 @@ if [ ! -f /config/.config/mimeapps.list ]; then
 text/x-rst=featherpad.desktop
 text/x-python=featherpad.desktop
 application/x-shellscript=featherpad.desktop
+application/xml=featherpad.desktop
+application/x-yaml=featherpad.desktop
 EOF
 fi
 
