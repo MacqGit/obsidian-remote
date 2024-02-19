@@ -88,9 +88,7 @@ RUN   apt-get update -qy &&\
    apt-get install -f -qy --no-install-recommends apt-utils || exit 1 &&\
    # get and update certificates, to hopefully resolve mscorefonts error
    apt-get install -f -qy --no-install-recommends ca-certificates || exit 1  &&\
-   update-ca-certificates &&\
-   rm -rf /var/lib/apt/lists/* &&\
-   apt-get clean
+   update-ca-certificates
 
 # Install newest TeXLive
 RUN   TAR="http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz" &&\
@@ -116,10 +114,9 @@ RUN   git clone https://gitlab.com/git-latexdiff/git-latexdiff.git /tmp/gld &&\
 
 # update fontutils and lua
 RUN   fc-cache -fv || exit 1 &&\
-      texhash --verbose ||exit 1
-
-#      apt-get install -y --no-install-recommends \
-#      latexmk texlive-fonts-recommended texlive-lang-french texlive-latex-extra texlive-latex-recommended tex-gyre && \
+      texhash --verbose ||exit 1 &&\
+      apt-get install -y --no-install-recommends \
+      latexmk texlive-fonts-recommended texlive-lang-french texlive-latex-extra texlive-latex-recommended tex-gyre 
 
 WORKDIR /
 
@@ -146,6 +143,18 @@ RUN \
     echo "**** extract obsidian ****" && \
         chmod +x /obsidian.AppImage && \
         /obsidian.AppImage --appimage-extract
+
+RUN \
+    curl -s https://api.github.com/repos/jgm/pandoc/releases/latest \
+    | grep "browser_download_url.*amd64.deb" \
+    | cut -d : -f 2,3 \
+    | tr -d \" \
+    | wget -O latest_pandoc.amd.deb --show-progress -qi -
+    
+RUN \
+    echo "**** Install Pandoc ****" && \
+    dpkg -i /latest_pandoc.amd.deb && \
+    rm /latest_pandoc.amd.deb
 
 ENV \
     CUSTOM_PORT="8080" \
