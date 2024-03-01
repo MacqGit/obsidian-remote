@@ -17,14 +17,15 @@ RUN \
             libnss3 \
             # Install Chrome dependencies.
             dbus-x11 \
-            uuid-runtime\
+            uuid-runtime \
             # Tex dependancies
             fontconfig wget make \
             # Basic editor
-            featherpad && \
+            featherpad \
             # Open file extensions
-         apt-get install -y \
-            xdg-utils
+            xdg-utils \
+            # DejaVu fonts collection
+            fonts-dejavu
 
 RUN \
    echo "**** Install locales ****" && \
@@ -130,7 +131,7 @@ RUN \
       /tmp/*
 
 # set version label
-ARG OBSIDIAN_VERSION=1.5.3
+ARG OBSIDIAN_VERSION=1.5.8
 
 RUN \
     echo "**** download obsidian ****" && \
