@@ -7,6 +7,8 @@ SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 # LABEL org.opencontainers.image.title="Container hosted Obsidian MD"
 # LABEL org.opencontainers.image.description="Hosted Obsidian instance allowing access via web browser"
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 RUN \
    echo "**** install packages ****" && \
         # Update and install extra packages.
@@ -15,6 +17,9 @@ RUN \
             # Packages needed to download and extract obsidian.
             curl \
             libnss3 \
+            libnotify4 \
+            libsecret-1-0 \
+            libsecret-common \
             # Install Chrome dependencies.
             dbus-x11 \
             uuid-runtime \
@@ -22,10 +27,11 @@ RUN \
             fontconfig wget make \
             # Basic editor
             featherpad \
-            # Open file extensions
-            xdg-utils \
             # DejaVu fonts collection
-            fonts-dejavu
+            fonts-dejavu && \
+            # Open file extensions
+         apt-get install -y \
+            xdg-utils
 
 RUN \
    echo "**** Install locales ****" && \
@@ -56,12 +62,11 @@ RUN \
 
 RUN \
    echo "**** Sphinx & Extensions ****" && \
-      pip3 install --no-cache-dir --upgrade 'pip == 23.3.1' && \
+      pip3 install --no-cache-dir --upgrade pip && \
       pip3 install --no-cache-dir pipenv && \
       pip3 install --no-cache-dir \
         'Sphinx                        == 5.3.0' \
         'sphinx-autobuild              == 2021.3.14' \
-        'sphinx_design                 == 0.3.0' \
         'sphinxcontrib.httpdomain' \
         'sphinx-intl' \
         'myst-parser' \
@@ -115,35 +120,11 @@ RUN   git clone https://gitlab.com/git-latexdiff/git-latexdiff.git /tmp/gld &&\
 
 # update fontutils and lua
 RUN   fc-cache -fv || exit 1 &&\
-      texhash --verbose ||exit 1 &&\
+      texhash --verbose || exit 1 &&\
       apt-get install -y --no-install-recommends \
       latexmk texlive-fonts-recommended texlive-lang-french texlive-latex-extra texlive-latex-recommended tex-gyre 
 
 WORKDIR /
-
-RUN \
-   echo "**** cleanup ****" && \
-      apt-get clean && \
-      rm -rf \
-      /var/cache/* \
-      /var/lib/apt/lists/* \
-      /var/tmp/* \
-      /tmp/*
-
-# set version label
-ARG OBSIDIAN_VERSION=1.5.8
-
-RUN \
-    echo "**** download obsidian ****" && \
-        curl \
-        https://github.com/obsidianmd/obsidian-releases/releases/download/v$OBSIDIAN_VERSION/Obsidian-$OBSIDIAN_VERSION.AppImage \
-        -L \
-        -o obsidian.AppImage
-
-RUN \
-    echo "**** extract obsidian ****" && \
-        chmod +x /obsidian.AppImage && \
-        /obsidian.AppImage --appimage-extract
 
 RUN \
     curl -s https://api.github.com/repos/jgm/pandoc/releases/latest \
@@ -156,6 +137,24 @@ RUN \
     echo "**** Install Pandoc ****" && \
     dpkg -i /latest_pandoc.amd.deb && \
     rm /latest_pandoc.amd.deb
+
+# set version label
+ARG OBSIDIAN_VERSION=1.5.11
+
+RUN \
+    echo "**** download obsidian ****" && \
+    curl --location --output obsidian.deb "https://github.com/obsidianmd/obsidian-releases/releases/download/v${OBSIDIAN_VERSION}/obsidian_${OBSIDIAN_VERSION}_amd64.deb" && \
+    dpkg -i obsidian.deb && \
+    rm /obsidian.deb
+
+RUN \
+   echo "**** cleanup ****" && \
+      apt-get clean && \
+      rm -rf \
+      /var/cache/* \
+      /var/lib/apt/lists/* \
+      /var/tmp/* \
+      /tmp/*
 
 ENV \
     CUSTOM_PORT="8080" \

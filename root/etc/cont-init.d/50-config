@@ -65,6 +65,16 @@ if [ ! -f /config/.bashrc ]; then
    touch /config/.bashrc
    cat <<'EOF' > /config/.bashrc
 echo "run .bashrc"
+
+if test -z "${XDG_RUNTIME_DIR}"; then
+  UID="$(id -u)"
+  export XDG_RUNTIME_DIR=/tmp/"${UID}"-runtime-dir
+    if ! test -d "${XDG_RUNTIME_DIR}"; then
+        mkdir "${XDG_RUNTIME_DIR}"
+        chmod 0700 "${XDG_RUNTIME_DIR}"
+    fi
+fi
+
 PATH="/TeX/texlive/bin/x86_64-linux/:${PATH}"
 HOME=/config
 cd /vaults
@@ -75,5 +85,5 @@ fi
 chown -R abc:abc \
     /config \
     /vaults \
-    /squashfs-root
+    /defaults # Src default files for s6-rc.d/init-autostart-config
 
