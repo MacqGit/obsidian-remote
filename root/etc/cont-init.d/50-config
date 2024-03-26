@@ -75,5 +75,5 @@ fi
 chown -R abc:abc \
     /config \
     /vaults \
-    /squashfs-root
+    /root
 

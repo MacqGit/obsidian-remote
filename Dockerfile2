@@ -1,4 +1,4 @@
-FROM ghcr.io/linuxserver/baseimage-rdesktop-web:focal
+FROM ghcr.io/linuxserver/baseimage-kasmvnc:ubuntujammy
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
@@ -11,13 +11,22 @@ RUN \
    echo "**** install packages ****" && \
         # Update and install extra packages.
         apt-get update && \
+        DEBIAN_FRONTEND=noninteractive \
         apt-get install -y --no-install-recommends \
             # Packages needed to download and extract obsidian.
             curl \
             libnss3 \
+            libgtk-3-0 \
+            libnotify4 \
+            libatspi2.0-0 \
+            libsecret-1-0 \
+            desktop-file-utils \
+            fonts-noto-color-emoji \
+            git \
+            ssh-askpass \
             # Install Chrome dependencies.
-            dbus-x11 \
-            uuid-runtime \
+#            dbus-x11 \
+#            uuid-runtime \
             # Tex dependancies
             fontconfig wget make \
             # Basic editor
@@ -46,6 +55,7 @@ RUN \
       apt-get install -y --no-install-recommends software-properties-common && \
       add-apt-repository ppa:deadsnakes/ppa && \
       apt-get update && \
+      DEBIAN_FRONTEND=noninteractive \
       # Install py39 from deadsnakes repository
       apt-get -y --no-install-recommends install python3.9 \
       # Install pip from standard ubuntu packages
@@ -85,6 +95,7 @@ COPY  texlive.profile tex-pkgs.txt /TeX/
 
 # Install some basic collections
 RUN   apt-get update -qy &&\
+     DEBIAN_FRONTEND=noninteractive \
    # Install necessary certificate?
    apt-get install -f -qy --no-install-recommends apt-utils || exit 1 &&\
    # get and update certificates, to hopefully resolve mscorefonts error
@@ -121,29 +132,13 @@ RUN   fc-cache -fv || exit 1 &&\
 
 WORKDIR /
 
-RUN \
-   echo "**** cleanup ****" && \
-      apt-get clean && \
-      rm -rf \
-      /var/cache/* \
-      /var/lib/apt/lists/* \
-      /var/tmp/* \
-      /tmp/*
-
 # set version label
 ARG OBSIDIAN_VERSION=1.5.8
 
 RUN \
     echo "**** download obsidian ****" && \
-        curl \
-        https://github.com/obsidianmd/obsidian-releases/releases/download/v$OBSIDIAN_VERSION/Obsidian-$OBSIDIAN_VERSION.AppImage \
-        -L \
-        -o obsidian.AppImage
-
-RUN \
-    echo "**** extract obsidian ****" && \
-        chmod +x /obsidian.AppImage && \
-        /obsidian.AppImage --appimage-extract
+    curl --location --output obsidian.deb "https://github.com/obsidianmd/obsidian-releases/releases/download/v${OBSIDIAN_VERSION}/obsidian_${OBSIDIAN_VERSION}_amd64.deb" && \
+    dpkg -i obsidian.deb
 
 RUN \
     curl -s https://api.github.com/repos/jgm/pandoc/releases/latest \
@@ -157,11 +152,23 @@ RUN \
     dpkg -i /latest_pandoc.amd.deb && \
     rm /latest_pandoc.amd.deb
 
+RUN \
+   echo "**** cleanup ****" && \
+      apt-get clean && \
+      rm -rf \
+      /var/cache/* \
+      /var/lib/apt/lists/* \
+      /var/tmp/* \
+      /tmp/*
+
 ENV \
     CUSTOM_PORT="8080" \
-    GUIAUTOSTART="true" \
-    HOME="/vaults" \
-    TITLE="Sphinx-Obsidian v$OBSIDIAN_VERSION"
+    CUSTOM_HTTPS_PORT="8443" \
+    CUSTOM_USER="" \
+    PASSWORD="" \
+    SUBFOLDER="" \
+    TITLE="Obsidian v${OBSIDIAN_VERSION}" \
+    FM_HOME="/vaults"
 
 # add local files
 COPY root/ /
