@@ -1,0 +1,181 @@
+FROM docker-baseimage-rdesktop-web:latest
+
+SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
+
+# LABEL org.opencontainers.image.authors="github@sytone.com"
+# LABEL org.opencontainers.image.source="https://github.com/sytone/obsidian-remote"
+# LABEL org.opencontainers.image.title="Container hosted Obsidian MD"
+# LABEL org.opencontainers.image.description="Hosted Obsidian instance allowing access via web browser"
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN \
+   echo "**** install packages ****" && \
+        # Update and install extra packages.
+        apt-get update && \
+        apt-get install -y --no-install-recommends \
+            # Packages needed to download and extract obsidian.
+            curl \
+            libnss3 \
+            libnotify4 \
+            libsecret-1-0 \
+            libsecret-common \
+            # Install Chrome dependencies.
+            dbus-x11 \
+            uuid-runtime \
+            # Tex dependancies
+            fontconfig wget make \
+            # Basic editor
+            featherpad \
+            # DejaVu fonts collection
+            fonts-dejavu && \
+            # Open file extensions
+         apt-get install -y \
+            xdg-utils
+
+RUN \
+   echo "**** Install locales ****" && \
+        # Set default locale for the environment
+        apt-get install -y locales && \
+        sed -i -e 's/# fr_BE.UTF-8/fr_BE.UTF-8/' /etc/locale.gen && \
+        locale-gen && \
+        # Set system-wide 'locale' environment (- user environment to be set in .bashrc - for non-interactive login)
+        # see: https://help.ubuntu.com/community/EnvironmentVariables
+        /usr/sbin/update-locale LANG=fr_BE.UTF-8 LANGUAGE=fr_BE.UTF-8 LC_MESSAGES=POSIX
+
+# Set locale environment from container, when 'docker exec -u ${UID} -ti obsidian /bin/bash' (<> from xrdp session !)
+ENV LANG fr_BE.UTF-8
+ENV LANGUAGE fr_BE.UTF-8
+ENV LC_MESSAGES POSIX
+
+RUN \
+      apt-get install -y --no-install-recommends software-properties-common && \
+      add-apt-repository ppa:deadsnakes/ppa && \
+      apt-get update && \
+      # Install py310 from deadsnakes repository
+      apt-get -y --no-install-recommends install python3.10 \
+      # Install pip from standard ubuntu packages
+      python3-pip
+
+RUN \
+      apt-get install -y --no-install-recommends git
+
+RUN \
+   echo "**** Sphinx & Extensions ****" && \
+      pip3 install --no-cache-dir --upgrade pip && \
+      pip3 install --no-cache-dir pipenv && \
+      pip3 install --no-cache-dir \
+        'Sphinx                        >=8,<9' \
+        'sphinx-autobuild' \
+        'sphinxcontrib.httpdomain' \
+        'sphinx-intl' \
+        'myst-parser' \
+        'sphinx_design' \
+        'sphinx-copybutton' \
+        'sphinx-tabs' \
+        'sphinx-togglebutton' \
+        'sphinxcontrib-youtube' \
+        'linkify-it-py' && \
+\
+      pip install --no-cache-dir git+https://github.com/MacqGit/sphinx-book-theme.git@v1.0 && \
+      pip install --no-cache-dir git+https://github.com/MacqGit/sphinx-external-toc.git@v1.0 && \
+      pip install --no-cache-dir git+https://github.com/MacqGit/sphinx-multilingual.git@v1.0 && \
+      pip install --no-cache-dir git+https://github.com/MacqGit/sphinx-gettext-ifconfig.git@v1.0 && \
+\
+      pip3 list --outdated && \
+\
+   echo "**** Latex PDF ****"
+
+RUN mkdir /TeX
+
+WORKDIR /TeX
+
+COPY  texlive.profile tex-pkgs.txt /TeX/
+
+# Install some basic collections
+RUN   apt-get update -qy &&\
+   # Install necessary certificate?
+   apt-get install -f -qy --no-install-recommends apt-utils || exit 1 &&\
+   # get and update certificates, to hopefully resolve mscorefonts error
+   apt-get install -f -qy --no-install-recommends ca-certificates || exit 1  &&\
+   update-ca-certificates
+
+# Install newest TeXLive
+RUN   TAR="http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz" &&\
+   wget -nv $TAR && tar -xvf *.tar.gz && \
+   mkdir texlive && cd texlive &&\
+   TEXLIVE_INSTALL_ENV_NOCHECK=true TEXLIVE_INSTALL_NO_WELCOME=true \
+   ../install-tl-*/install-tl --profile=../texlive.profile && cd bin/* &&\
+   ./tlmgr install latex-bin xetex latexmk latexdiff &&\
+   # Install custom packages
+        ./tlmgr install $(cat /TeX/tex-pkgs.txt | tr "\n" " ") &&\
+   # Clean up insallation
+        cd /TeX/ &&\
+   rm -rf install-tl-* textlive.profile tex-pkgs.txt
+
+# where to find the bin
+ENV PATH="/TeX/texlive/bin/x86_64-linux/:${PATH}"
+
+# Install git-latexdiff
+RUN   git clone https://gitlab.com/git-latexdiff/git-latexdiff.git /tmp/gld &&\
+   cp /tmp/gld/git-latexdiff /TeX/texlive/bin/x86_64-linux/ &&\
+   chmod a+x /TeX/texlive/bin/x86_64-linux/git-latexdiff &&\
+   rm -rf /tmp/gld
+
+# update fontutils and lua
+RUN   fc-cache -fv || exit 1 &&\
+      texhash --verbose || exit 1 &&\
+      apt-get install -y --no-install-recommends \
+      latexmk texlive-fonts-recommended texlive-lang-french texlive-latex-extra texlive-latex-recommended tex-gyre 
+
+WORKDIR /
+
+RUN \
+    curl -s https://api.github.com/repos/jgm/pandoc/releases/latest \
+    | grep "browser_download_url.*amd64.deb" \
+    | cut -d : -f 2,3 \
+    | tr -d \" \
+    | wget -O latest_pandoc.amd.deb --show-progress -qi -
+    
+RUN \
+    echo "**** Install Pandoc ****" && \
+    dpkg -i /latest_pandoc.amd.deb && \
+    rm /latest_pandoc.amd.deb
+
+# set version label
+ARG OBSIDIAN_VERSION=1.6.7
+
+RUN \
+    echo "**** download obsidian ****" && \
+    curl --location --output obsidian.deb "https://github.com/obsidianmd/obsidian-releases/releases/download/v${OBSIDIAN_VERSION}/obsidian_${OBSIDIAN_VERSION}_amd64.deb" && \
+    dpkg -i obsidian.deb && \
+    rm /obsidian.deb
+
+RUN \
+   echo "**** cleanup ****" && \
+      apt-get clean && \
+      rm -rf \
+      /var/cache/* \
+      /var/lib/apt/lists/* \
+      /var/tmp/* \
+      /tmp/*
+
+ENV \
+    CUSTOM_PORT="8080" \
+    GUIAUTOSTART="true" \
+    HOME="/vaults" \
+    TITLE="Sphinx-Obsidian v$OBSIDIAN_VERSION"
+
+# add local files
+COPY root/ /
+
+WORKDIR $HOME
+
+EXPOSE 8080
+EXPOSE 8000
+EXPOSE 27123
+EXPOSE 27124
+VOLUME ["/config","/vaults"]
+
+
+
