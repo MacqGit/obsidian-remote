@@ -3,8 +3,10 @@ amsfonts
 amsmath
 anyfontsize
 auxhook
+babel-french
 booktabs
 capt-of
+carlisle
 cmap
 colortbl
 ellipse
@@ -18,6 +20,9 @@ geometry
 hycolor
 hypcap
 hyperref
+hyphen-french
+hyph-utf8
+ifoddpage
 kvoptions
 kvsetkeys
 letltxmacro
@@ -32,6 +37,7 @@ refcount
 rerunfilecheck
 sectsty
 tabulary
+tikzpagenodes
 titlesec
 tools
 upquote

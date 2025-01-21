@@ -1,4 +1,4 @@
-FROM docker-baseimage-rdesktop-web:latest
+FROM ghcr.io/linuxserver/baseimage-rdesktop-web:jammy
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
